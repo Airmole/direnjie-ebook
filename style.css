@@ -118,6 +118,21 @@ width: 100%; height: 100%;
 margin: 0 auto !important;
 }
 
+/* 滑动翻页动画效果 */
+#viewport.swipe-animation {
+transition: transform 0.3s ease-out;
+}
+
+/* 下一页滑动效果 */
+#viewport.swipe-animation-next {
+transform: translateX(-100%);
+}
+
+/* 上一页滑动效果 */
+#viewport.swipe-animation-prev {
+transform: translateX(100%);
+}
+
 /* 图片自适应样式 - 温和设置，不破坏原始格式 */
 #viewport iframe {
 width: 100%;

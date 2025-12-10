@@ -1057,6 +1057,96 @@ function closeMobileToc() {
     tocToggleBtn.textContent = "目录";
 }
 
+// 添加触摸滑动翻页功能
+function addSwipePagination() {
+    const viewport = document.getElementById('viewport');
+    if (!viewport) return;
+
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchEndX = 0;
+    let touchEndY = 0;
+    let isSwiping = false;
+
+    // 触摸开始
+    viewport.addEventListener('touchstart', function(event) {
+        // 检查是否有多个触点（避免与缩放等手势冲突）
+        if (event.touches.length > 1) {
+            isSwiping = false;
+            return;
+        }
+        
+        touchStartX = event.touches[0].clientX;
+        touchStartY = event.touches[0].clientY;
+        isSwiping = true;
+    }, { passive: true });
+
+    // 触摸移动
+    viewport.addEventListener('touchmove', function(event) {
+        if (!isSwiping) return;
+        
+        touchEndX = event.touches[0].clientX;
+        touchEndY = event.touches[0].clientY;
+    }, { passive: true });
+
+    // 触摸结束
+    viewport.addEventListener('touchend', function(event) {
+        if (!isSwiping) return;
+        
+        touchEndX = event.changedTouches[0].clientX;
+        touchEndY = event.changedTouches[0].clientY;
+        
+        handleSwipeGesture();
+        isSwiping = false;
+    }, { passive: true });
+
+    // 处理滑动手势
+    function handleSwipeGesture() {
+        if (!rendition) return;
+        
+        const diffX = touchStartX - touchEndX;
+        const diffY = touchStartY - touchEndY;
+        
+        // 判断是否为有效的水平滑动（水平距离大于垂直距离，且水平距离足够大）
+        const absDiffX = Math.abs(diffX);
+        const absDiffY = Math.abs(diffY);
+        
+        // 至少滑动50像素且水平滑动距离大于垂直滑动距离
+        if (absDiffX > 50 && absDiffX > absDiffY) {
+            // 添加滑动动画类
+            if (diffX > 0) {
+                // 向左滑动 - 下一页
+                viewport.classList.add('swipe-animation-next');
+                setTimeout(() => {
+                    if(useToc){
+                        rendition.next();
+                    } else {
+                        const currentIndex = spineItems.findIndex(href => href === currentLocation?.href?.split('#')[0]);
+                        if(currentIndex >= 0 && currentIndex < spineItems.length - 1){
+                            rendition.display(spineItems[currentIndex + 1]);
+                        }
+                    }
+                    viewport.classList.remove('swipe-animation-next');
+                }, 300);
+            } else {
+                // 向右滑动 - 上一页
+                viewport.classList.add('swipe-animation-prev');
+                setTimeout(() => {
+                    if(useToc){
+                        rendition.prev();
+                    } else {
+                        const currentIndex = spineItems.findIndex(href => href === currentLocation?.href?.split('#')[0]);
+                        if(currentIndex > 0){
+                            rendition.display(spineItems[currentIndex - 1]);
+                        }
+                    }
+                    viewport.classList.remove('swipe-animation-prev');
+                }, 300);
+            }
+        }
+    }
+}
+
 // 点击阅读区域关闭目录（仅手机端）
 document.getElementById('main').onclick = (e) => {
     if (window.innerWidth <= 768 && 
@@ -1170,6 +1260,9 @@ readyPromise.then(() => {
     buildToc(nav);
     console.log("Rendering book...");
     renderBook();
+    
+    // 添加触摸滑动翻页功能
+    addSwipePagination();
     
     // 更新标题显示加载成功
     if (!titleEl.textContent || titleEl.textContent === "加载中...") {
